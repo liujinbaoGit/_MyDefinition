@@ -1,51 +1,47 @@
 classdef Reactions < handle
 %% Reactions [Version_16.11.01]
-% --------------------------------------------------------------
-% 	Properties[DEPENDENT]
-% 	nSpcs			Species numbers.
-% 	nRctns			Reaction numbers.
-% 	rcntsij			The reactant info-matrix.	[ i X j ]	species[i] reactions[j]
-% 	prdtsij			The product info-matrix.
-% 	sij				The reactions info-matrix.	[ - rcntsij + prdtsij ]
-%	Properties[INPUT]
-% 	type			'EEDF-reactions' or 'COEK-reactions'
-% 	spcs			Species		[ cell(n x 1) ]	e.g. { 'CO'; 'CO2'; 'O2' }
-% 	rcnt			Reactant	[ cell(m x n) ]
-% 	prdt			Product		[ cell(m x n) ]
-% 								e.g. For CO + O = CO2
-%										  O + O = O2
-%										rcnt = { 'CO', 'O'; 'O', 'O'}
-%										prdt = { 'CO2'    ; 'O2'    }
-% 	dEe				electron energy loss	[J]
-% 	dEg				neutron energy loss 	[J]
-%	CS				Cross section packages	[ cell(n x 1) ]
-%	k				Reaction rate constant
-%	rate			Reaction rate
 % ----------------------------------------------------------------------------------
-
-% --------------------------------------------------------------
-%	1. Construction:	Reactions( spcs, rcnt, prdt )
-%		[3 types]		Reactions( spcs, rcnt, prdt, dEg )
-%						Reactions( spcs, rcnt, prdt, dEg, dEe )
-%	2. Derive the nSpcs, nRctns, rcntsij, prdtsij and sij from the input.
-%	3. Calculate 		k		[m^3/s]
-%						rate	[m^{-3}/s]
-% 						setK(obj, eedfM, Te, Tg)
-%							(1) if the reaction is relative to the eedf
-%									setKeedf(obj, eedfM)
-%							(2) otherwise.
-%									setKcoek(obj, Te, Tg)
-%	4. Calculate 		dn		[m^{-3}/s]
-%						dQe		[J/m^3/s]
-%						dQg		[J/m^3/s]
-% --------------------------------------------------------------
-%	plotCS(obj)			plot obj's cross section.
-%	info(obj)
-% ************************History*******************************
-% **************************************************************
-% --------------------------------------------------------------
+%   Properties[DEPENDENT]
+%   nSpcs           Species numbers.
+%   nRctns          Reaction numbers.
+%   rcntsij         The reactant info-matrix.   [ i X j ]   species[i] reactions[j]
+%   prdtsij         The product info-matrix.
+%   sij             The reactions info-matrix.  [ - rcntsij + prdtsij ]
+%   Properties[INPUT]
+%   type            'EEDF-reactions' or 'COEK-reactions'
+%   spcs            Species     [ cell(n x 1) ] e.g. { 'CO'; 'CO2'; 'O2' }
+%   rcnt            Reactant    [ cell(m x n) ]
+%   prdt            Product     [ cell(m x n) ]
+%                               e.g. For CO + O = CO2
+%                                         O + O = O2
+%                                       rcnt = { 'CO', 'O'; 'O', 'O'}
+%                                       prdt = { 'CO2'    ; 'O2'    }
+%   dEe             electron energy loss    [J]
+%   dEg             neutron energy loss     [J]
+%   CS              Cross section packages  [ cell(n x 1) ]
+%   k               Reaction rate constant
+%   rate            Reaction rate
+% ----------------------------------------------------------------------------------
+%   1. Construction:    Reactions( spcs, rcnt, prdt )
+%       [3 types]       Reactions( spcs, rcnt, prdt, dEg )
+%                       Reactions( spcs, rcnt, prdt, dEg, dEe )
+%   2.                  Auto calculate the nSpcs, nRctns, rcntsij, prdtsij and sij
+%                           from the input.
+%   3. Calculate        k       [m^3/s]     setK(obj, eedfM, Te, Tg)
+%                           (1) if the reaction is relative to the eedf
+%                               setKeedf(obj, eedfM)
+%                           (2) otherwise.
+%                               setKcoek(obj, Te, Tg)
+%                       rate    [m^{-3}/s]  setRate( obj, n )
+%   4. Calculate        dn      [m^{-3}/s]  dn  = getdn(obj)
+%                       dQe     [J/m^3/s]   dQe = getdQe(obj)
+%                       dQg     [J/m^3/s]   dQg = getdQg(obj)
+% ----------------------------------------------------------------------------------
+%   plotCS(obj)         plot obj's cross section.
+%   info(obj)           disp the reactionlist.
+% ----------------------------------------------------------------------------------
 %%  Properties
-% --------------------------------------------------------------
+% ----------------------------------------------------------------------------------
     properties (Dependent)
         nSpcs
         nRctns
@@ -74,7 +70,7 @@ classdef Reactions < handle
 % --------------------------------------------------------------
     methods
 % --------------------------------------------------------------
-%%  	Construction
+%%      Construction
 % --------------------------------------------------------------
         function obj = Reactions( spcs, rcnt, prdt, dEg, dEe )
             if nargin == 0
@@ -100,7 +96,7 @@ classdef Reactions < handle
 
         end
 % --------------------------------------------------
-%%  	Get.value		[ nSpcs, nSpcs, rcntsij, prdtsij, sij ]
+%%      Get.value       [ nSpcs, nSpcs, rcntsij, prdtsij, sij ]
 % --------------------------------------------------
         function val = get.nSpcs(obj)
             val = size(obj.spcs,1);
@@ -111,22 +107,22 @@ classdef Reactions < handle
         function val = get.rcntsij(obj)
             val = cell2mat(cellfun(@(x)(sum(strcmp(x, obj.rcnt),2))',...
                 obj.spcs,'UniformOutput', false));
-			val = sparse(val);
+            val = sparse(val);
         end
         function val = get.prdtsij(obj)
             val = cell2mat(cellfun(@(x)(sum(strcmp(x, obj.prdt),2))',...
                 obj.spcs,'UniformOutput', false));
-			val = sparse(val);
+            val = sparse(val);
         end
         function val = get.sij(obj)
             val = -obj.rcntsij + obj.prdtsij;
-			val = sparse(val);
+            val = sparse(val);
         end
 % --------------------------------------------------------------
-%%  	Set		[ k, rate ]
+%%      Set     [ k, rate ]
 % --------------------------------------------------------------
         function setKeedf(obj, eedfM)
-		% eedfM	[ e[J], eedf[J^{-1}] ]
+        % eedfM [ e[J], eedf[J^{-1}] ]
             for i = 1:obj.nRctns
                 obj.k(i,1) = MyFun.calKeedf( obj.CS{i}, eedfM );
             end
@@ -146,7 +142,7 @@ classdef Reactions < handle
             obj.rate = obj.k.*prod((repmat(n',obj.nRctns,1)).^(obj.rcntsij'),2);
         end
 % --------------------------------------------------------------
-%%  	Getvalue		[ dn, dQe, dQg ]
+%%      Getvalue        [ dn, dQe, dQg ]
 % --------------------------------------------------------------
         function val = getdn(obj)
             val = obj.sij*obj.rate;
@@ -158,9 +154,9 @@ classdef Reactions < handle
             val = obj.dEg'*obj.rate;
         end
 % --------------------------------------------------------------
-%%  	Plus(obj0, obj1)
+%%      Plus(obj0, obj1)
 % --------------------------------------------------------------
-		function obj2 = plus(obj0, obj1)
+        function obj2 = plus(obj0, obj1)
             obj2 = ReactionSets.Reactions();
             %%  obj0.spcs + obj1.spcs
             obj2.spcs = unique([obj0.spcs;obj1.spcs],'stable');
@@ -194,7 +190,7 @@ classdef Reactions < handle
             obj2.dEg  = [obj0.dEg; obj1.dEg];
         end
 % --------------------------------------------------------------
-%%  	plotCS and disp(obj)
+%%      plotCS and disp(obj)
 % --------------------------------------------------------------
         function plotCS(obj)
             figure;
@@ -205,10 +201,10 @@ classdef Reactions < handle
             end
             xlabel('energy [eV]');
             ylabel('cross section [m^2]')
-			hold off;
+            hold off;
         end
 % --------------------------------------------------------------
-%%  	info(obj)
+%%      info(obj)
 % --------------------------------------------------------------
         function info(obj)
             disp('SPECIES:');
@@ -220,13 +216,13 @@ classdef Reactions < handle
         end
 
     end
-% --------------------------------------------------------------
-%%	reactionsList
-% --------------------------------------------------------------
+% ----------------------------------------------------------------------------------
+%%  reactionsList
+% ----------------------------------------------------------------------------------
     methods(Static)
         list    = reactionsList( spcs, rcntsij, prdtsij, xj);
     end
-% **************************************************************
+% **********************************************************************************
 end
 
 

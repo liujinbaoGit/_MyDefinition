@@ -3,10 +3,10 @@ classdef MyFun
 % --------------------------------------------------------------
 %  	eedf = Maxwell_EEDF(E_input,E_unit,Te_input,Te_unit)
 %	eepf = Maxwell_EEPF(E_input,E_unit,Te_input,Te_unit)
-%	n = numDen(p, Tg)       n[cm^-3], p[Pa], Tg[K]
+%	n = numDen(p, Tg)       n[m^-3], p[Pa], Tg[K]
 %	ne = e_numDen(eM,n)     eM[J]   n[*/J] the number density per energy
 %	E = e_meanE(eM,n)  	eM[J]   n[*/J]
-%	k = calKeedf( csM, eedfM )			
+%	k = calKeedf( csM, eedfM )
 %		Calculate the reaction rate constant via eedf and cross section.
 % 		csM  	[ e[eV], cs[m^2] ]
 %		eedfM	[ e[J], eedf[J^{-1}] ]
@@ -83,12 +83,12 @@ classdef MyFun
         end
         %%  Number Density based on ideal gas laws [pV = nRT]
         function n = numDen(p, Tg)
-            n = p/Tg/Const.R*Const.NA*1e-6;   % p[Pa] T[K] n[cm-3]
+            n = p/Tg/Const.R*Const.NA;   % p[Pa] T[K] n[cm-3]
         end
         %%  The total number density of electron
         function ne = e_numDen(eM,n)
             ne = sum(n) * (eM(2)-eM(1));
-        end  
+        end
         %%  The mean energy of electron based on its eedf.
         %
         function E = e_meanE(eM,n)
@@ -111,6 +111,6 @@ classdef MyFun
 
 		end
     end
-    
+
 end
 

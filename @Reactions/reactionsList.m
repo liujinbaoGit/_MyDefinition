@@ -1,11 +1,14 @@
 function list = reactionsList( spcs, rcntsij0, prdtsij0, xj0 )
 %% reactionsList [Version_16.11.01]
 % --------------------------------------------------------------
-%	disprReaction [spcs, rcntsij, prdtsij] ¡ª¡ª> j*['aA+bB => cC+dD']
+%	disp reactions-[spcs, rcntsij, prdtsij] => j*['aA+bB => cC+dD']
 % 	If one reaction is null, do not export it.
 % 	If the all reactions are null, export 'NULL'.
-% 	xj is the number of reaction.
-
+% 	xj: the number of reaction.
+%   i : the index of the specie.
+%   j : the index of the reaction.
+%   rcntsij0 : the reactant matrix.
+%   prdtsij0 : the product matrix.
 % **************************************************************
 rcntsij = rcntsij0(:,xj0~=0);
 prdtsij = prdtsij0(:,xj0~=0);
@@ -67,5 +70,4 @@ else
         list(j,1) = {reactions};
     end
 end
-
 end
